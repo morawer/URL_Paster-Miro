@@ -5,9 +5,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 token = os.getenv("TOKEN_NOTION")
-DB_notion = os.getenv("DATABASE_NOTION")
+database_notion = os.getenv("DATABASE_NOTION")
 
-url = f"https://api.notion.com/v1/databases/{DB_notion}/query"
+url = f"https://api.notion.com/v1/databases/{database_notion}/query"
 
 payload={}
 headers = {
