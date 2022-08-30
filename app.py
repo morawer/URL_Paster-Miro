@@ -1,4 +1,5 @@
 import os
+import json
 import requests
 from dotenv import load_dotenv
 
@@ -17,4 +18,7 @@ headers = {
 
 response = requests.request("POST", url, headers=headers, data=payload)
 
-print(response.text)
+jsonResponse = json.loads(response.text)
+
+for data in jsonResponse['results']:
+  print(data['id'])
