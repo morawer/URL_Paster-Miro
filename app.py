@@ -5,6 +5,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+count = 0
+
 token = os.getenv("TOKEN_NOTION")
 database_notion = os.getenv("DATABASE_NOTION")
 
@@ -20,5 +22,8 @@ response = requests.request("POST", url, headers=headers, data=payload)
 
 jsonResponse = json.loads(response.text)
 
+print(response.status_code)
+
 for data in jsonResponse['results']:
-  print(data['id'])
+  count = count + 1
+  print(f"{count} URL: {data['url']}")
