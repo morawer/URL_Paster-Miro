@@ -8,16 +8,12 @@ import pytz
 
 load_dotenv()
 
-
 token = os.getenv("TOKEN_NOTION")
 database_notion = os.getenv("DATABASE_NOTION")
 tokenMiro = os.getenv("TOKEN_MIRO")
 
-count = 0
-
-counter = 0
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=5000)
+date = datetime.now(UTC) - timedelta(minutes=5)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
@@ -46,7 +42,6 @@ def PatchSticky(tokenMiro, id, text, url2):
   print(response.text)
   
   print('LANZADOOO!!!')
-
 
 def QueryMiro(tokenMiro, titleNotion, urlNotion):
     url = "https://api.miro.com/v2/boards/o9J_kjQ2bCw=/items?limit=50&type=sticky_note"
@@ -137,12 +132,13 @@ def QueryNotion(token, database_notion, tokenMiro, dateFinal, QueryMiro):
     print(response.status_code)
 
     for data in jsonResponse['results']:
-      titleNotion = data['properties']['Pedido']['title'][0]['plain_text']
-      urlNotion= data['url']
-      print(
-      f"Pedido: {titleNotion} URL: {urlNotion} DATE:{data['properties']['Creado']['created_time']}")
-
-
-      QueryMiro(tokenMiro, titleNotion, urlNotion)
-
+      try:
+        titleNotion = data['properties']['Pedido']['title'][0]['plain_text']
+        urlNotion= data['url']
+        print(
+        f"Pedido: {titleNotion} URL: {urlNotion} DATE:{data['properties']['Creado']['created_time']}")
+        QueryMiro(tokenMiro, titleNotion, urlNotion)
+      except:
+        print('[ERROR] Something went wrong')
+        
 QueryNotion(token, database_notion, tokenMiro, dateFinal, QueryMiro)
