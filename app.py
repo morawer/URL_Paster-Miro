@@ -1,5 +1,6 @@
 import os
 import json
+from xmlrpc.client import ResponseError
 import requests
 from dotenv import load_dotenv
 from datetime import datetime, timedelta, time
@@ -16,18 +17,44 @@ count = 0
 
 counter = 0
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=60)
+date = datetime.now(UTC) - timedelta(minutes=5000)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
 
-def QueryMiro(tokenMiro, counter, titleNotion):
+def PatchSticky(tokenMiro, id, text, url2):
+    
+  content = f"{text} <a href = \"{url2}\" > SÁBANA"
+  print(id)
+
+  url = f"https://api.miro.com/v2/boards/o9J_kjQ2bCw=/sticky_notes/{id}"
+
+  payload = {
+      "data": {
+          "content": content,
+      }
+  }
+  headers = {
+    "accept": "application/json",
+    'Authorization': tokenMiro,
+    'Content-Type': 'application/json'
+  }
+
+  response = requests.patch(url, headers=headers, json=payload)
+  
+  print(response.status_code)
+  print(response.text)
+  
+  print('LANZADOOO!!!')
+
+
+def QueryMiro(tokenMiro, titleNotion, urlNotion):
     url = "https://api.miro.com/v2/boards/o9J_kjQ2bCw=/items?limit=50&type=sticky_note"
 
     payload={}
     headers = {
-  'Authorization': tokenMiro,
-  'Cookie': 'AWSALBTG=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p; AWSALBTGCORS=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p'
+        'Authorization': tokenMiro,
+      'Cookie': 'AWSALBTG=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p; AWSALBTGCORS=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p'
   }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -37,18 +64,22 @@ def QueryMiro(tokenMiro, counter, titleNotion):
 
     for itemMiro in jsonResponseMiro['data']:
       title = itemMiro['data']['content']
+      id = itemMiro['id']
+    
 
       if title.__contains__(titleNotion):
-        print( title.__contains__(titleNotion))
-        print(f'{title}  <<<<<  {titleNotion}')
+        PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
+
         break
+      
+
 
     nextLink = jsonResponseMiro['links']['next']
     
 
-    QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion)
+    QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
 
-def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion):
+def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion):
     url = nextLink
 
     payload={}
@@ -62,11 +93,12 @@ def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion):
     jsonResponseMiro = json.loads(response.text)
 
     for itemMiro in jsonResponseMiro['data']:
-      title = itemMiro['data']['content']        
+      title = itemMiro['data']['content']  
+      id = itemMiro['id']
 
       if title.__contains__(titleNotion):
-        print( title.__contains__(titleNotion))
-        print(f'{title}  <<<<<  {titleNotion}')
+        PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
+
         break
 
       
@@ -76,11 +108,11 @@ def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion):
     try:
       nextLink = jsonResponseMiro['links']['next']
   
-      QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion)
+      QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
     except:
       print('FIN')
 
-def QueryNotion(token, database_notion, tokenMiro, count, counter, dateFinal, QueryMiro):
+def QueryNotion(token, database_notion, tokenMiro, dateFinal, QueryMiro):
     url = f"https://api.notion.com/v1/databases/{database_notion}/query"
 
     payload = json.dumps( {
@@ -105,12 +137,12 @@ def QueryNotion(token, database_notion, tokenMiro, count, counter, dateFinal, Qu
     print(response.status_code)
 
     for data in jsonResponse['results']:
-      count = count + 1
       titleNotion = data['properties']['Pedido']['title'][0]['plain_text']
+      urlNotion= data['url']
       print(
-      f"{count} Pedido: {titleNotion} URL: {data['url']} DATE:{data['properties']['Creado']['created_time']}")
+      f"Pedido: {titleNotion} URL: {urlNotion} DATE:{data['properties']['Creado']['created_time']}")
 
 
-      QueryMiro(tokenMiro, counter, titleNotion)
+      QueryMiro(tokenMiro, titleNotion, urlNotion)
 
-QueryNotion(token, database_notion, tokenMiro, count, counter, dateFinal, QueryMiro)
+QueryNotion(token, database_notion, tokenMiro, dateFinal, QueryMiro)
