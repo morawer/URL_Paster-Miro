@@ -13,7 +13,7 @@ database_notion = os.getenv("DATABASE_NOTION")
 tokenMiro = os.getenv("TOKEN_MIRO")
 
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=5)
+date = datetime.now(UTC) - timedelta(minutes=60)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
@@ -38,10 +38,7 @@ def PatchSticky(tokenMiro, id, text, url2):
 
   response = requests.patch(url, headers=headers, json=payload)
   
-  print(response.status_code)
-  print(response.text)
-  
-  print('LANZADOOO!!!')
+  print('[OK!] StickyNote rewrited')
 
 def QueryMiro(tokenMiro, titleNotion, urlNotion):
     url = "https://api.miro.com/v2/boards/o9J_kjQ2bCw=/items?limit=50&type=sticky_note"
@@ -61,17 +58,13 @@ def QueryMiro(tokenMiro, titleNotion, urlNotion):
       title = itemMiro['data']['content']
       id = itemMiro['id']
     
-
       if title.__contains__(titleNotion):
-        PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
-
-        break
+        if (title[len(titleNotion)] != " " ):
+          PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
+          break
       
-
-
     nextLink = jsonResponseMiro['links']['next']
     
-
     QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
 
 def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion):
