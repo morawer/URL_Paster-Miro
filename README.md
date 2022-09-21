@@ -19,3 +19,5 @@ This list are pasted in the machine with the "to do's" remains to make in the un
 ![sticky note example](https://github.com/morawer/URL_Paster-Miro/blob/main/sticky_note.png)
 
 If the order number made match in Miro will embed the URL to quick query by Antonio.
+
+Thanks for readme, I appreciate the comments. 
