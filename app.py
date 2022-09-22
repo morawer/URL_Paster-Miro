@@ -18,18 +18,17 @@ boardMiro = os.getenv("BOARD_MIRO")
 
 # Delay 30 minutes the current time
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=30)
+date = datetime.now(UTC) - timedelta(minutes=60)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
 
 # Function to write the notion URL in the correct sticky note.
-def PatchSticky(tokenMiro, id, text, url2):
+def PatchSticky(tokenMiro, id, text, url2, type):
     
   content = f"{text} <a href = \"{url2}\" > SÁBANA"
-  print(id)
 
-  url = f"https://api.miro.com/v2/boards/{boardMiro}/sticky_notes/{id}"
+  url = f"https://api.miro.com/v2/boards/{boardMiro}/{type}/{id}"
 
   payload = {
       "data": {
@@ -43,16 +42,16 @@ def PatchSticky(tokenMiro, id, text, url2):
   }
 
   response = requests.patch(url, headers=headers, json=payload)
-  print('[OK!] StickyNote rewrited')
+  print(f'[OK!] {type} rewrited')
 
 # Function to search the sticky note in Miro with match in "sábana" 
 def QueryMiro(tokenMiro, titleNotion, urlNotion):
-    url = f"https://api.miro.com/v2/boards/{boardMiro}/items?limit=50&type=sticky_note"
 
+    url = f"https://api.miro.com/v2/boards/{boardMiro}/items?limit=50&type=sticky_note&type=shape"
     payload={}
     headers = {
         'Authorization': tokenMiro,
-      'Cookie': 'AWSALBTG=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p; AWSALBTGCORS=ywUl6gU/VxJCBAF9IIiWuTQ6PQ1HzIsZgkvCGT2uP6Ya6olyQUqCAEhbEMWpTA55jhs0SVYZHqFkoxd7FCdepx11lJJ9O19F1fcutTRiQ9XAOWO2lpn5n9vL/s/cF39ezgOKBmYOZ9nTzPS254Uyb0awY14VZBemCBm3Y1qoPQ9p'
+      'Cookie': 'AWSALBTG=+MhOBmsm+TDVnXg84oNfFdPwusCsJ9Mj+Pn60eKqU9LHccjG/Tb1u4kmqfiEB3UBkHpshqkiXr/NNRbQ7Y0MQipkLf9AUCTR1XBZbuQcz2N5biEfMJBfa1zJRXrdC2B927M+7jBh5P/i8jS3rxmchhyqhxYEXAcgukV5ejjfnvck; AWSALBTGCORS=+MhOBmsm+TDVnXg84oNfFdPwusCsJ9Mj+Pn60eKqU9LHccjG/Tb1u4kmqfiEB3UBkHpshqkiXr/NNRbQ7Y0MQipkLf9AUCTR1XBZbuQcz2N5biEfMJBfa1zJRXrdC2B927M+7jBh5P/i8jS3rxmchhyqhxYEXAcgukV5ejjfnvck'
   }
 
     response = requests.request("GET", url, headers=headers, data=payload)
@@ -62,10 +61,21 @@ def QueryMiro(tokenMiro, titleNotion, urlNotion):
     for itemMiro in jsonResponseMiro['data']:
       title = itemMiro['data']['content']
       id = itemMiro['id']
+      type = itemMiro['type']
     
       if re.search(titleNotion, title, re.IGNORECASE)!= None:
-        PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
-        break
+        if type == 'sticky_note':
+          try:
+            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_note')
+            break
+          except:
+            print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
+        else:
+          try:
+            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='shapes')
+            break
+          except:
+            print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
       
     nextLink = jsonResponseMiro['links']['next']
     
@@ -88,10 +98,15 @@ def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
     for itemMiro in jsonResponseMiro['data']:
       title = itemMiro['data']['content']  
       id = itemMiro['id']
+      type = itemMiro['type']
 
       if re.search(titleNotion, title, re.IGNORECASE) != None:
-        PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion)
-        break
+        if type == 'sticky_note':
+          PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_note')
+          break
+        else:
+          PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='shapes')
+          break
       
     try:
       nextLink = jsonResponseMiro['links']['next']
@@ -122,8 +137,6 @@ def QueryNotion(token, database_notion, tokenMiro, dateFinal, QueryMiro):
     response = requests.request("POST", url, headers=headers, data=payload)
 
     jsonResponse = json.loads(response.text)
-
-    print(response.status_code)
 
     for data in jsonResponse['results']:
       try:
