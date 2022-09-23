@@ -18,7 +18,7 @@ boardMiro = os.getenv("BOARD_MIRO")
 
 # Delay 30 minutes the current time
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=60)
+date = datetime.now(UTC) - timedelta(minutes=30)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
