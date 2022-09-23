@@ -18,7 +18,7 @@ boardMiro = os.getenv("BOARD_MIRO")
 
 # Delay 30 minutes the current time
 UTC = pytz.utc
-date = datetime.now(UTC) - timedelta(minutes=30)
+date = datetime.now(UTC) - timedelta(minutes=60)
 dateStr = str(date)
 date2 = dateStr.split('.')[0]
 dateFinal = date2.replace(' ', 'T')
@@ -26,9 +26,12 @@ dateFinal = date2.replace(' ', 'T')
 # Function to write the notion URL in the correct sticky note.
 def PatchSticky(tokenMiro, id, text, url2, type):
     
-  content = f"{text} <a href = \"{url2}\" > SÁBANA"
+  content = f"{text} \n <a href = \"{url2}\" > SÁBANA"
 
-  url = f"https://api.miro.com/v2/boards/{boardMiro}/{type}/{id}"
+  if type == 'sticky_notes':
+    url = f"https://api.miro.com/v2/boards/{boardMiro}/sticky_notes/{id}"
+  elif type == 'shapes':
+    url = f"https://api.miro.com/v2/boards/{boardMiro}/shapes/{id}"
 
   payload = {
       "data": {
@@ -42,6 +45,7 @@ def PatchSticky(tokenMiro, id, text, url2, type):
   }
 
   response = requests.patch(url, headers=headers, json=payload)
+  print(response.status_code)
   print(f'[OK!] {type} rewrited')
 
 # Function to search the sticky note in Miro with match in "sábana" 
@@ -66,11 +70,11 @@ def QueryMiro(tokenMiro, titleNotion, urlNotion):
       if re.search(titleNotion, title, re.IGNORECASE)!= None:
         if type == 'sticky_note':
           try:
-            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_note')
+            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_notes')
             break
           except:
             print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
-        else:
+        elif type == 'shape':
           try:
             PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='shapes')
             break
@@ -78,7 +82,7 @@ def QueryMiro(tokenMiro, titleNotion, urlNotion):
             print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
       
     nextLink = jsonResponseMiro['links']['next']
-    
+        
     QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
     
 # Function to search the sticky note in Miro with match in "sábana" if the previous sheet had not match.
@@ -102,11 +106,17 @@ def QueryNextLink(tokenMiro, jsonResponseMiro, nextLink, titleNotion, urlNotion)
 
       if re.search(titleNotion, title, re.IGNORECASE) != None:
         if type == 'sticky_note':
-          PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_note')
-          break
-        else:
-          PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='shapes')
-          break
+          try:
+            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='sticky_notes')
+            break
+          except:
+            print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
+        elif type == 'shape':
+          try:
+            PatchSticky(tokenMiro=tokenMiro, id=id, text=title, url2=urlNotion, type='shapes')
+            break
+          except:
+            print(f'[ERROR]Something went wrong [PATCHSTICKY method {type}]')
       
     try:
       nextLink = jsonResponseMiro['links']['next']
